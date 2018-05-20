@@ -1,13 +1,12 @@
 #!/usr/bin/env python
-# chatserve
+# ftclient
 # CS372 Spring 2018
 # -----------------
 # Name: Zachary Thomas
 # Email: thomasza@oregonstate.edu
-# Date: 4/22/2018
+# Date: 5/19/2018
 # ------------------------------------
-# Awaits connection from chatclient, send
-# and receive messages up to 500 characters long.
+# Set up file transfer with server.
 # ------------------------------------
 # Cited references:
 # Lecture 15: Socket Programming Primer 
@@ -21,37 +20,15 @@ import sys
 # when a connection is made accept and receive messages
 # until one side quits. When that happens resume listening.
 def start_up():
-	#confirm command line arguments include port number
-	if (len(sys.argv) < 2 or len(sys.argv) > 2):
-		print "useage: " + str(sys.argv[0]) + " [port number]"
-		sys.exit(0)
-
-	#get handle
-	print "Please enter a handle, it must be no longer than 10 characters."
-	handle = raw_input("Handle: ")
-	handle = handle[:10] #make sure handle is not longer than 10 characters
-	print "Your handle is: " + handle
-
-	#setup socket and begin listening 
-	serverPort = int(sys.argv[1])
-	serverSocket = socket(AF_INET, SOCK_STREAM)
-	serverSocket.bind(('', serverPort))
-	serverSocket.listen(1)
-
-	#wait to accept incoming connection
-	while True:
-		print "The server is waiting to receive connection."
-		connectionSocket, addr = serverSocket.accept()
-
-		#we made a connection. keep sending messages to and from client
-		#until the client or server quits
-		while True:
-			#receive message from client
-			if not receive_message(connectionSocket):
-				break
-			#send message to client
-			if not send_message(handle, connectionSocket):
-				break
+	serverName = 'servername'
+	serverPort = 12000
+	clientSocket = socket(AF_INET, SOCK_STREAM)
+	clientSocket.connect((serverName, serverPort))
+	sentence = raw_input('enter something to send')
+	clientSocket.send(sentence)
+	modifiedSentence = clientSocket.recv(1024)
+	print'From Server:', modifiedSentence
+	clientSocket.close()	
 
 # receive_message
 # ------------
