@@ -84,7 +84,7 @@ bool check_args(int argc, char *argv[])
 void start_up(int port_num)
 {
 	//setup variables
-	int socketFD, connection;
+	int socketFD, listen_socket, connection;
 	struct sockaddr_in server_address, client_address;
 	struct hostent* server_host_info;
 	socklen_t size_client_info;	
@@ -93,14 +93,14 @@ void start_up(int port_num)
 	memset((char*)&server_address, '\0', sizeof(server_address)); //clear address struct
 	server_address.sin_family = AF_INET; //set address family
 	server_address.sin_port = htons(port_num); //save port number
-	serverAddress.sin_addr.s_addr = INADDR_ANY; //we allow connection from any address
+	server_address.sin_addr.s_addr = INADDR_ANY; //we allow connection from any address
 
 	//set up socket
-	socketFD = socket(AF_INET, SOCK_STREAM, 0); //create the socket
+	listen_socket = socket(AF_INET, SOCK_STREAM, 0); //create the socket
 
 	//start listening with current socket for any incoming connections
-	bind(socketFD, (struct sockaddr *)&server_address, sizeof(server_address)); //connect socket to port
-	listen(listenSocketFD, 10); //socket is now listening for a connection
+	bind(listen_socket, (struct sockaddr *)&server_address, sizeof(server_address)); //connect socket to port
+	listen(listen_socket, 10); //socket is now listening for a connection
 
 	printf("Server open on %d\n", port_num);	
 	
@@ -108,7 +108,7 @@ void start_up(int port_num)
 	while(1){
 		//accept the next connection
 		size_client_info = sizeof(client_address); //get the size of the address for the client that will connect
-		connection = accept(socketFD, (struct sockaddr *)&client_address, &size_client_info); //accept
+		connection = accept(listen_socket, (struct sockaddr *)&client_address, &size_client_info); //accept
 
 		//react to clients command
 		handle_command(connection);
@@ -217,3 +217,4 @@ void receive_message(int socketFD, char *handle, size_t handle_size)
 	//show message from server
 	printf("%s", buffer); 
 }
+*/

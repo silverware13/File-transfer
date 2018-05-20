@@ -20,14 +20,19 @@ import sys
 # when a connection is made accept and receive messages
 # until one side quits. When that happens resume listening.
 def start_up():
-	serverName = 'servername'
-	serverPort = 12000
+	#confirm command line arguments include port number
+	if (len(sys.argv) < 5 or len(sys.argv) > 6):
+		print "Useage: " + str(sys.argv[0]) + " [server address] [server port] [command] [filename] [data port]" 
+		sys.exit(0)
+
+	serverName = sys.argv[1]
+	serverPort = int(sys.argv[2])
 	clientSocket = socket(AF_INET, SOCK_STREAM)
 	clientSocket.connect((serverName, serverPort))
 	sentence = raw_input('enter something to send')
 	clientSocket.send(sentence)
-	modifiedSentence = clientSocket.recv(1024)
-	print'From Server:', modifiedSentence
+	#modifiedSentence = clientSocket.recv(1024)
+	#print'From Server:', modifiedSentence
 	clientSocket.close()	
 
 # receive_message
