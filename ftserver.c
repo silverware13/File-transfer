@@ -8,12 +8,18 @@
  * Server for file transfer.
  * -----------------------
  * Cited references:
+ * 
  * Reviewed my code from my
  * CS344 OTP socket programming
  * assignment.
- * https://github.com/silverware13/OTP/blob/master/otp_enc_d.c 
+ * https://github.com/silverware13/OTP/blob/master/otp_enc_d.c
+ *
+ * Reviewed my code from our last assignment (project1)
+ * https://github.com/silverware13/Chat/blob/master/chatclient.c
+ *
  */
 
+#define MAX_CHARS_MESSAGE 5000000
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -28,6 +34,7 @@
 bool check_args(int argc, char *argv[]);
 void start_up(int port_num);
 void handle_command(int connection);
+void receive_message(int connection);
 
 int main(int argc, char *argv[])
 {
@@ -117,11 +124,15 @@ void start_up(int port_num)
 
 /* Function: handle_command
  * --------------------------
+ *  Receive a command from the client
+ *  and then send an appropriate response.
  *
+ *  connection: The connection number.
  */
 void handle_command(int connection)
 {
 	//close the connection
+	receive_message(connection);
 	close(connection);
 	printf("Closed connection\n");
 }
@@ -175,32 +186,27 @@ void send_message(int socketFD, char *handle, size_t handle_size)
 		}
 	} while(chars_written < strlen(buffer));
 }
+*/
 
- * Function: receive_message
+/* Function: receive_message
  * --------------------------
- *  Read a message from the server.
- *  If we get a message letting us know
- *  that the server is quitting we terminate
- *  the program.
+ *  Read a message from the client.
  *
- *  socketFD: The socket number.
- *  handle: Array that holds handle.
- *  handle_size: Size of the handle array.
- *
-void receive_message(int socketFD, char *handle, size_t handle_size)
+ *  connection: The connection number.
+ */
+void receive_message(int connection)
 {
 	//setup variables
 	int chars_read;
-	char buffer[MAX_CHARS_MESSAGE + MAX_CHARS_HANDLE + 4];
-	memset(buffer, '\0', MAX_CHARS_MESSAGE + MAX_CHARS_HANDLE + 4);
+	char buffer[MAX_CHARS_MESSAGE + 1];
+	memset(buffer, '\0', MAX_CHARS_MESSAGE + 1);
 	
-	//read message from server
+	//read message from the client
 	chars_read = 0;
 	int bufLen; //holds the buffer length
 	int bufSum = 0; //the number of chars we have writen to our buffer
-	memset(buffer, '\0', MAX_CHARS_MESSAGE + MAX_CHARS_HANDLE + 3);
 	do{
-		chars_read = recv(socketFD, &buffer[bufSum], 100, 0); //read from socket
+		chars_read = recv(connection, &buffer[bufSum], 100, 0); //read from socket
 		bufSum += chars_read;
 		bufLen = strlen(buffer);
 		if(chars_read < 0){
@@ -217,4 +223,3 @@ void receive_message(int socketFD, char *handle, size_t handle_size)
 	//show message from server
 	printf("%s", buffer); 
 }
-*/
