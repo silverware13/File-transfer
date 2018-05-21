@@ -27,10 +27,27 @@ def start_up():
 
 	serverName = sys.argv[1]
 	serverPort = int(sys.argv[2])
+	command	= sys.argv[3]
+	fileName = sys.argv[4]
+	dataPort = int(sys.argv[5])
+
+	#confirm a valid command was used
+	if (command != "-l" and command != "-g"):
+		print "Invalid command. Valid commands are -g or -l"
+		sys.exit(0)
+
+	#attempt to connect to the server
 	clientSocket = socket(AF_INET, SOCK_STREAM)
-	clientSocket.connect((serverName, serverPort))
-	sentence = raw_input('enter something to send')
-	clientSocket.send(sentence)
+	try:
+		clientSocket.connect((serverName, serverPort))
+	except:
+    		print "Failed to connect to server"
+		sys.exit(1)
+
+	request = command + fileName + dataPort
+
+
+	clientSocket.send(request)
 	#modifiedSentence = clientSocket.recv(1024)
 	#print'From Server:', modifiedSentence
 	clientSocket.close()	
