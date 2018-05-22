@@ -44,12 +44,12 @@ def start_up():
     		print "Failed to connect to server"
 		sys.exit(1)
 
-	request = command + fileName + dataPort
+	request = command + fileName + str(dataPort) + "\n"
 
 
 	clientSocket.send(request)
-	#modifiedSentence = clientSocket.recv(1024)
-	#print'From Server:', modifiedSentence
+	fileContents = clientSocket.recv(1024)
+	print'From Server:', fileContents
 	clientSocket.close()	
 
 # receive_message

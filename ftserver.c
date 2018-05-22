@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 	//set port number	
 	int port_num = strtol(argv[1], NULL, 10);
 
-	//setup the  server and start listening
+	//setup the  server and handle all incoming commands
 	start_up(port_num);
 	
 	return 0;
@@ -116,7 +116,7 @@ void start_up(int port_num)
 		//accept the next connection
 		size_client_info = sizeof(client_address); //get the size of the address for the client that will connect
 		connection = accept(listen_socket, (struct sockaddr *)&client_address, &size_client_info); //accept
-
+		printf("New connection\n");
 		//react to clients command
 		handle_command(connection);
 	}
@@ -132,6 +132,7 @@ void start_up(int port_num)
 void handle_command(int connection)
 {
 	//close the connection
+	printf("doing stuff\n");
 	receive_message(connection);
 	close(connection);
 	printf("Closed connection\n");
@@ -205,6 +206,7 @@ void receive_message(int connection)
 	chars_read = 0;
 	int bufLen; //holds the buffer length
 	int bufSum = 0; //the number of chars we have writen to our buffer
+	printf("starting to read\n");
 	do{
 		chars_read = recv(connection, &buffer[bufSum], 100, 0); //read from socket
 		bufSum += chars_read;
@@ -216,10 +218,10 @@ void receive_message(int connection)
 	} while(buffer[bufLen - 1] != '\n');
 
 	//if server is quiting we also quit
-	if(!strcmp(buffer, "\\quit\n")){
-		exit(0);
-	}
+	//if(!strcmp(buffer, "\\quit\n")){
+	//	exit(0);
+	//}
 
 	//show message from server
-	printf("%s", buffer); 
+	printf("THIS IS THE MESSAGE: %s\n", buffer); 
 }
