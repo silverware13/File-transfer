@@ -116,7 +116,8 @@ void start_up(int port_num)
 		//accept the next connection
 		size_client_info = sizeof(client_address); //get the size of the address for the client that will connect
 		connection = accept(listen_socket, (struct sockaddr *)&client_address, &size_client_info); //accept
-		printf("Connection from %s\n", client_address);
+		printf("Connection from %s\n", inet_ntop(AF_INET,&client_address.sin_addr,
+                    client_address,sizeof(client_address)));
 		//react to clients command
 		handle_command(connection);
 	}
@@ -132,14 +133,13 @@ void start_up(int port_num)
 void handle_command(int connection)
 {
 	//setup variables
-	int chars_read;
+	int bufLen; //holds the buffer length
+	int bufSum = 0; //the number of chars we have writen to our buffer
+	int chars_read = 0;
 	char buffer[MAX_CHARS_MESSAGE + 1];
 	memset(buffer, '\0', MAX_CHARS_MESSAGE + 1);
 	
 	//read message from the client
-	chars_read = 0;
-	int bufLen; //holds the buffer length
-	int bufSum = 0; //the number of chars we have writen to our buffer
 	do{
 		chars_read = recv(connection, &buffer[bufSum], 100, 0); //read from socket
 		bufSum += chars_read;
@@ -150,18 +150,12 @@ void handle_command(int connection)
 		}
 	} while(buffer[bufLen - 1] != '\n');
 
-	//if server is quiting we also quit
-	//if(!strcmp(buffer, "\\quit\n")){
-	//	exit(0);
-	//}
-
 	//show message from server
-	printf("THIS IS THE MESSAGE: %s\n", buffer);
 	file_transfer(connection, buffer); 
 	close(connection);
 }
 
-/* Function: send_message
+/* Function: file_transfer
  * --------------------------
  *  User either starts by typing a message to 
  *  the server, or user types "\quit" to end the chat.
@@ -172,20 +166,18 @@ void handle_command(int connection)
  */
 void file_transfer(int connection, char *buffer)
 {
+	printf("THIS IS THE MESSAGE: %s\n", buffer);
 	//setup variables
 	int bufLen, chars_written, chars_read, list_mode;
-	char portBuffer[10];
+	char portBuffer[100];
 	int bufSum = 0; //the number of chars we have writen to our buffer
 	
 	//get the data port from the request
+	int i = 0;
 	do{
-		chars_read = recv(connection, &portBuffer[bufSum], 1, 0); //read from socket
-		bufSum += chars_read;
+		portBuffer[i] = buffer[i];
 		bufLen = strlen(portBuffer);
-		if(chars_read < 0){
-			fprintf(stderr, "Error reading from socket.\n");
-			exit(2); 
-		}
+		i++;
 	} while(portBuffer[bufLen - 2] != '-');
 
 	//see if the request asks for list or file

@@ -13,6 +13,7 @@
 
 from socket import *
 import sys
+import time
 
 # start_up
 # -------
@@ -52,6 +53,7 @@ def start_up():
 	#send a transfer request
 	request = str(dataPort) + command + fileName + "\n"
 	clientSocket.send(request)
+	time.sleep(2)
 	
 	#attempt to connect for transfer
 	dataSocket = socket(AF_INET, SOCK_STREAM)
@@ -64,8 +66,8 @@ def start_up():
 	#receive file transfer	
 	fileContents = dataSocket.recv(5000000)
 	print'From Server:', fileContents
-	clientSocket.close()	
 	dataSocket.close()
+	clientSocket.close()	
 	
 # receive_message
 # ------------
