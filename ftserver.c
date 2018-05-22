@@ -173,8 +173,9 @@ void handle_command(int connection)
 void file_transfer(int connection, char *buffer)
 {
 	//setup variables
-	int chars_read, list_mode;
+	int bufLen, chars_written, chars_read, list_mode;
 	char portBuffer[10];
+	int bufSum = 0; //the number of chars we have writen to our buffer
 	
 	//get the data port from the request
 	do{
@@ -201,9 +202,7 @@ void file_transfer(int connection, char *buffer)
 	printf("THIS IS THE PORT: %d\n", dataPort);
 	
 	//setup variables
-	int chars_written;
-	//setup variables
-	int socketFD, listen_socket, connection;
+	int socketFD, listen_socket, data_connection;
 	struct sockaddr_in server_address, client_address;
 	struct hostent* server_host_info;
 	socklen_t size_client_info;	
@@ -229,18 +228,15 @@ void file_transfer(int connection, char *buffer)
 
 	//accept the next connection
 	size_client_info = sizeof(client_address); //get the size of the address for the client that will connect
-	connection = accept(listen_socket, (struct sockaddr *)&client_address, &size_client_info); //accept
+	data_connection = accept(listen_socket, (struct sockaddr *)&client_address, &size_client_info); //accept
 	printf("Connection from %s\n", client_address);
 	//react to clients command
-	handle_command(connection);
-	
-	//setup variables
-	int chars_written;
+	handle_command(data_connection);
 
 	//send file to client
 	chars_written = 0;
 	do{
-		chars_written += send(connection, buffer, strlen(buffer), 0); //write to socket
+		chars_written += send(data_connection, buffer, strlen(buffer), 0); //write to socket
 		if(chars_written < 0){
 			fprintf(stderr, "Error writing to socket.\n");
 			exit(2); 
