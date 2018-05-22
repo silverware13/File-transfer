@@ -171,7 +171,7 @@ void file_transfer(int connection, char *buffer)
 {
 	printf("THIS IS THE MESSAGE: %s\n", buffer);
 	//setup variables
-	int bufLen, chars_written, chars_read, list_mode;
+	int bufLen, chars_written, chars_read, list_mode, file_exists;
 	char portBuffer[100];
 	char fileName[1000];
 	int bufSum = 0; //the number of chars we have writen to our buffer
@@ -231,7 +231,12 @@ void file_transfer(int connection, char *buffer)
 	if(list_mode){
 		printf("List directory requested on port %d\n", dataPort);	
 	} else {
-		printf("File \"%s\" requested on port %d\n", fileName, dataPort);	
+		printf("File \"%s\" requested on port %d\n", fileName, dataPort);
+		if( access( fileName, F_OK ) != -1 ) {
+			file_exists = true;
+		} else {
+			file_exists = false;
+		}	
 	}
 
 	//accept the next connection
@@ -244,7 +249,11 @@ void file_transfer(int connection, char *buffer)
 	if(list_mode){
 		printf("Sending directory contents to %s:%d\n", client_name, dataPort);	
 	} else {
-		printf("Sending \"%s'\" to %s:%d\n", fileName, client_name, dataPort);	
+		if(file_exists){
+			printf("Sending \"%s'\" to %s:%d\n", fileName, client_name, dataPort);
+		} else {
+			printf("File not found. Sending error message to %s:%d\n", client_name, dataPort);
+		}	
 	}
 
 	//send file to client
