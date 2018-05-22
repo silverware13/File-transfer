@@ -265,4 +265,5 @@ void file_transfer(int connection, char *buffer)
 			exit(2); 
 		}
 	} while(chars_written < strlen(buffer));
+	close(data_connection);
 }
