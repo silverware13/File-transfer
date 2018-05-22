@@ -28,8 +28,13 @@ def start_up():
 	serverName = sys.argv[1]
 	serverPort = int(sys.argv[2])
 	command	= sys.argv[3]
-	fileName = sys.argv[4]
-	dataPort = int(sys.argv[5])
+
+	#if we don't enter a file name then take the dataPort only
+	if (len(sys.argv) == 6):
+		fileName = sys.argv[4]
+		dataPort = int(sys.argv[5])
+	else:
+		dataPort = int(sys.argv[4])
 
 	#confirm a valid command was used
 	if (command != "-l" and command != "-g"):
@@ -44,14 +49,24 @@ def start_up():
     		print "Failed to connect to server"
 		sys.exit(1)
 
-	request = command + fileName + str(dataPort) + "\n"
-
-
+	#send a transfer request
+	request = str(dataPort) + command + fileName + "\n"
 	clientSocket.send(request)
-	fileContents = clientSocket.recv(1024)
+	
+	#attempt to connect for transfer
+	dataSocket = socket(AF_INET, SOCK_STREAM)
+	try:
+		dataSocket.connect((serverName, dataPort))
+	except:
+    		print "Failed to connect to server data port"
+		sys.exit(1)
+
+	#receive file transfer	
+	fileContents = dataSocket.recv(5000000)
 	print'From Server:', fileContents
 	clientSocket.close()	
-
+	dataSocket.close()
+	
 # receive_message
 # ------------
 # get a message from the client.
