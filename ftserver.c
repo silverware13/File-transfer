@@ -116,8 +116,11 @@ void start_up(int port_num)
 		//accept the next connection
 		size_client_info = sizeof(client_address); //get the size of the address for the client that will connect
 		connection = accept(listen_socket, (struct sockaddr *)&client_address, &size_client_info); //accept
-		printf("Connection from %s\n", inet_ntop(AF_INET,&client_address.sin_addr,
-                    client_address,sizeof(client_address)));
+		//show the connecting client
+		char client_name[INET_ADDRSTRLEN];
+		inet_ntop(AF_INET, &client_address.sin_addr.s_addr, client_name, sizeof(client_name));
+		printf("Connection from %s\n", client_name);
+
 		//react to clients command
 		handle_command(connection);
 	}
@@ -170,6 +173,7 @@ void file_transfer(int connection, char *buffer)
 	//setup variables
 	int bufLen, chars_written, chars_read, list_mode;
 	char portBuffer[100];
+	char fileName[1000];
 	int bufSum = 0; //the number of chars we have writen to our buffer
 	
 	//get the data port from the request
@@ -193,6 +197,18 @@ void file_transfer(int connection, char *buffer)
 	int dataPort = strtol(portBuffer, NULL, 10);
 	printf("THIS IS THE PORT: %d\n", dataPort);
 	
+	//get requested file name if not list mode
+	int ii = 0;
+	if(!list_mode){
+		do{
+			fileName[ii] = buffer[i];
+			bufLen = strlen(fileName);
+			i++;
+			ii++;
+		} while(fileName[bufLen - 1] != '\n');
+		fileName[bufLen - 1] = '\0';
+	}
+
 	//setup variables
 	int socketFD, listen_socket, data_connection;
 	struct sockaddr_in server_address, client_address;
@@ -215,7 +231,7 @@ void file_transfer(int connection, char *buffer)
 	if(list_mode){
 		printf("List directory requested on port %d\n", dataPort);	
 	} else {
-		printf("File “shortfile.txt” requested on port %d\n", dataPort);	
+		printf("File \"%s\" requested on port %d\n", fileName, dataPort);	
 	}
 
 	//accept the next connection
@@ -223,10 +239,12 @@ void file_transfer(int connection, char *buffer)
 	data_connection = accept(listen_socket, (struct sockaddr *)&client_address, &size_client_info); //accept
 
 	//perform the correct action
+	char client_name[INET_ADDRSTRLEN];
+	inet_ntop(AF_INET, &client_address.sin_addr.s_addr, client_name, sizeof(client_name));
 	if(list_mode){
-		printf("Sending directory contents to %d\n", dataPort);	
+		printf("Sending directory contents to %s:%d\n", client_name, dataPort);	
 	} else {
-		printf("Sending 'shortfile.txt' to %d\n", dataPort);	
+		printf("Sending \"%s'\" to %s:%d\n", fileName, client_name, dataPort);	
 	}
 
 	//send file to client
