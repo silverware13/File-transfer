@@ -221,9 +221,13 @@ void file_transfer(int connection, char *buffer)
 	//accept the next connection
 	size_client_info = sizeof(client_address); //get the size of the address for the client that will connect
 	data_connection = accept(listen_socket, (struct sockaddr *)&client_address, &size_client_info); //accept
-	printf("Connection from %s\n", client_address);
-	//react to clients command
-	handle_command(data_connection);
+
+	//perform the correct action
+	if(list_mode){
+		printf("Sending directory contents to %d\n", dataPort);	
+	} else {
+		printf("Sending 'shortfile.txt' to %d\n", dataPort);	
+	}
 
 	//send file to client
 	chars_written = 0;
