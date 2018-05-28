@@ -82,7 +82,8 @@ def receiveFile(dataSocket, controlSocket, serverName, serverPort, dataPort, fil
 		dataSocket.close()
 		controlSocket.close()
 		with open(fileName, "w") as text_file:
-			text_file.write(fileContents)	
+			text_file.write(fileContents)
+		print File transfer complete.	
 		sys.exit(0)
 
 	#receive list from server	

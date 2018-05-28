@@ -22,6 +22,7 @@
  */
 
 #define MAX_CHARS_MESSAGE 5000000
+#define MAX_CHARS_FILE_NAME 1000
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -37,7 +38,7 @@
 bool checkArgs(int argc, char *argv[]);
 void startup(int controlPort);
 void handleRequest(int controlConnection, int controlPort, char *clientName);
-void fileTransfer(char *buffer, char type, int dataPort);
+void fileTransfer(char *buffer, char type, int dataPort, char *fileName);
 
 int main(int argc, char *argv[])
 {
@@ -147,8 +148,10 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 	int bufLen, charsRead;
 	char portBuffer[100];
 	char serverName[1000];
-	char fileName[1000];
 	int bufSum = 0; //the number of chars we have writen to our buffer
+	char *fileName;
+	fileName = (char *)malloc(MAX_CHARS_FILE_NAME * sizeof(char));
+	memset(fileName, '\0', MAX_CHARS_MESSAGE);
 	char *buffer;
 	buffer = (char *)malloc(MAX_CHARS_MESSAGE * sizeof(char));
 	memset(buffer, '\0', MAX_CHARS_MESSAGE);
@@ -201,7 +204,7 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 		fileName[bufLen - 1] = '\0';
 	}
 
-	//print to server how request is being handled
+	//calculate how request should be handled
 	if(type == 'l'){
 		printf("List directory requested on port %d\n", dataPort);	
 		printf("Sending directory contents to %s:%d\n\n", clientName, dataPort);	
@@ -213,7 +216,7 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 		if( access( fileName, F_OK ) != -1 ) {
 			printf("Sending \"%s'\" to %s:%d\n\n", fileName, clientName, dataPort);
 			memset(buffer, '\0', MAX_CHARS_MESSAGE);
-			sprintf(buffer, "Receiving \"%s\" from %s:%d\n", fileName, serverName, dataPort);
+			sprintf(buffer, "Receiving \"%s\" from %s:%d", fileName, serverName, dataPort);
 		} else {
 			type = 'n';
 			printf("File not found. Sending error message to %s:%d\n\n", clientName, dataPort);
@@ -222,7 +225,7 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 		}	
 	}
 	
-	//send message to client
+	//send message to client on control connection 
 	int charsWritten = 0;
 	do{
 		charsWritten += send(controlConnection, buffer, strlen(buffer), 0); //write to socket
@@ -233,13 +236,13 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 	} while(charsWritten < strlen(buffer));
 	
 	//transfer the file
-	fileTransfer(buffer, type, dataPort);
+	fileTransfer(buffer, type, dataPort, fileName);
 }
 
 /* Function: fileTransfer
  * --------------------------
  */
-void fileTransfer(char *buffer, char type, int dataPort)
+void fileTransfer(char *buffer, char type, int dataPort, char *fileName)
 {
 	//setup variables
 	int socketFD, listen_socket, dataConnection;
@@ -264,7 +267,6 @@ void fileTransfer(char *buffer, char type, int dataPort)
 	bind(listen_socket, (struct sockaddr *)&serverAddress, sizeof(serverAddress)); //connect socket to port
 	listen(listen_socket, 10); //socket is now listening for a dataConnection
 	
-	printf("LISTENING FOR DATA CONNECTION\n");
 	//accept the next connection
 	size_client_info = sizeof(clientAddress); //get the size of the address for the client that will connect
 	dataConnection = accept(listen_socket, (struct sockaddr *)&clientAddress, &size_client_info); //accept
@@ -272,10 +274,10 @@ void fileTransfer(char *buffer, char type, int dataPort)
 		fprintf(stderr, "Error on data accept\n");
 		return;	
 	}
-	printf("ABOUT TO SEND FILEEEE\n");
 	
-	//send file
+	//get data that needs to be sent
 	if(type == 'l'){
+		//get the contents of current directory and put it into the buffer
 		char *buffer_ptr = buffer;
 		struct dirent *dir_entry;
 		DIR *dir = opendir(".");
@@ -283,7 +285,12 @@ void fileTransfer(char *buffer, char type, int dataPort)
 			buffer_ptr += sprintf(buffer_ptr, "%s ", dir_entry->d_name);
 		}
 	} else if (type == 'g'){
-		sprintf(buffer, "A FILE");
+		//get the contents of file and put it into the buffer
+		FILE *fp = fopen(fileName, "w");
+		while(fgets(buffer, 50, fp)){
+			printf("%s\n", buffer);
+		}
+		fclose(fp);
 	} else {
 		//no valid file to send
 		close(dataConnection);
