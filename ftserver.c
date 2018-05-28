@@ -112,7 +112,7 @@ void startup(int controlPort)
 	bind(listen_socket, (struct sockaddr *)&serverAddress, sizeof(serverAddress)); //connect socket to port
 	listen(listen_socket, 10); //socket is now listening for a controlConnection
 
-	printf("Server open on %d\n", controlPort);	
+	printf("Server open on %d\n\n", controlPort);	
 	
 	//we will keep looking for controlConnections until we are terminated
 	while(1){
@@ -200,17 +200,17 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 	//print to server how request is being handled
 	if(type == 'l'){
 		printf("List directory requested on port %d\n", dataPort);	
-		printf("Sending directory contents to %s:%d\n", clientName, dataPort);	
+		printf("Sending directory contents to %s:%d\n\n", clientName, dataPort);	
 		sprintf(buffer, "Receiving directory structure from %s:%d", serverName, dataPort);
 	} else {
 		printf("File \"%s\" requested on port %d\n", fileName, dataPort);
 		//confirm that the file exists
 		if( access( fileName, F_OK ) != -1 ) {
-			printf("Sending \"%s'\" to %s:%d\n", fileName, clientName, dataPort);
+			printf("Sending \"%s'\" to %s:%d\n\n", fileName, clientName, dataPort);
 			sprintf(buffer, "Receiving \"%s\" from %s:%d\n", fileName, serverName, dataPort);
 		} else {
 			type = 'n';
-			printf("File not found. Sending error message to %s:%d\n", clientName, dataPort);
+			printf("File not found. Sending error message to %s:%d\n\n", clientName, dataPort);
 			sprintf(buffer, "%s:%d says FILE NOT FOUND", serverName, controlPort);
 		}	
 	}

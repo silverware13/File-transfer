@@ -14,6 +14,7 @@
 from socket import *
 import sys
 import time
+import os.path
 
 # validateInput
 # -------------
@@ -70,6 +71,10 @@ def receiveFile(dataSocket, controlSocket, serverName, serverPort, dataPort):
 	#receive and print message from sever 
 	fileContents = controlSocket.recv(1000)
 	print fileContents
+	if "FILE NOT FOUND" in fileContents
+		dataSocket.close()
+		controlSocket.close()
+		sys.exit(0)
 
 	#receive file from server	
 	fileContents = dataSocket.recv(5000000)
@@ -92,8 +97,13 @@ def main():
 	if (len(sys.argv) == 6):
 		fileName = sys.argv[4]
 		dataPort = int(sys.argv[5])
+		#confirm that file does not already exist in directory
+		if (os.path.isfile(fileName)):
+			print fileName + " already exists"
+			sys.exit(1)
 	else:
 		dataPort = int(sys.argv[4])
+	
 	#connect to a ftserver on the control port
 	controlSocket = socket(AF_INET, SOCK_STREAM)
 	initiateContact(controlSocket, serverName, serverPort)	
