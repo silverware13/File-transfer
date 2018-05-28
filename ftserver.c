@@ -182,7 +182,7 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 		bufLen = strlen(serverName);
 		i++;
 		ii++;
-	} while(serverName[bufLen - 1] != '\n');
+	} while(serverName[bufLen - 1] != '@');
 	serverName[bufLen - 1] = '\0';
 	
 	//get requested file name if not list mode
@@ -193,7 +193,7 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 			bufLen = strlen(fileName);
 			i++;
 			ii++;
-		} while(fileName[bufLen - 1] != '@');
+		} while(fileName[bufLen - 1] != '\n');
 		fileName[bufLen - 1] = '\0';
 	}
 
@@ -201,13 +201,13 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 	if(type == 'l'){
 		printf("List directory requested on port %d\n", dataPort);	
 		printf("Sending directory contents to %s:%d\n", clientName, dataPort);	
-		sprintf(buffer, "Receiving directory structure from %s:%d", serverName, controlPort);
+		sprintf(buffer, "Receiving directory structure from %s:%d", serverName, dataPort);
 	} else {
 		printf("File \"%s\" requested on port %d\n", fileName, dataPort);
 		//confirm that the file exists
 		if( access( fileName, F_OK ) != -1 ) {
 			printf("Sending \"%s'\" to %s:%d\n", fileName, clientName, dataPort);
-			sprintf(buffer, "Receiving \"%s\" from %s:%d\n", fileName, serverName, controlPort);
+			sprintf(buffer, "Receiving \"%s\" from %s:%d\n", fileName, serverName, dataPort);
 		} else {
 			type = 'n';
 			printf("File not found. Sending error message to %s:%d\n", clientName, dataPort);
@@ -286,4 +286,5 @@ void fileTransfer(char *buffer, char type, int dataPort)
 		}
 	} while(charsWritten < strlen(buffer));
 	close(dataConnection);
+	printf("\n");
 }
