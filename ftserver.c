@@ -37,7 +37,7 @@
 bool checkArgs(int argc, char *argv[]);
 void startup(int connectionPort);
 void handleRequest(int connection, int connectionPort, char *client_name);
-void fileTransfer(int connection, char *buffer, char type);
+void fileTransfer(int connection, char *buffer, char type, int dataPort);
 
 int main(int argc, char *argv[])
 {
@@ -127,7 +127,7 @@ void startup(int connectionPort)
 		printf("Connection from %s\n", client_name);
 
 		//react to clients command
-		handleRequest(connection, client_name);
+		handleRequest(connection, connectionPort, client_name);
 	}
 }
 
@@ -141,7 +141,7 @@ void startup(int connectionPort)
 void handleRequest(int connection, int connectionPort, char *client_name)
 {
 	//setup variables
-	int bufLen, chars_written, chars_read;
+	int bufLen, chars_read;
 	char portBuffer[100];
 	char fileName[1000];
 	int bufSum = 0; //the number of chars we have writen to our buffer
@@ -202,7 +202,7 @@ void handleRequest(int connection, int connectionPort, char *client_name)
 	}
 	
 	//transfer the file
-	fileTransfer(connection, buffer, type);
+	fileTransfer(connection, buffer, type, dataPort);
 
 	//close the control connection 
 	close(connection);
@@ -218,7 +218,7 @@ void handleRequest(int connection, int connectionPort, char *client_name)
  *  handle_size: Size of the handle array.
  *  type: The type of request. List or get file.
  */
-void fileTransfer(int connection, char *buffer, char type)
+void fileTransfer(int connection, char *buffer, char type, int dataPort)
 {
 	//setup variables
 	int socketFD, listen_socket, data_connection;
@@ -246,7 +246,7 @@ void fileTransfer(int connection, char *buffer, char type)
 
 	//if in list mode show the contents of the current directory
 	if(type == 'l'){
-		char *buffer_ptr = buffer[2];
+		char *buffer_ptr = &buffer[2];
 		struct dirent *dir_entry;
 		DIR *dir = opendir(".");
 		while((dir_entry = readdir(dir)) != NULL) {
@@ -257,7 +257,7 @@ void fileTransfer(int connection, char *buffer, char type)
 	}
 
 	//send file to client
-	chars_written = 0;
+	int chars_written = 0;
 	do{
 		chars_written += send(data_connection, buffer, strlen(buffer), 0); //write to socket
 		if(chars_written < 0){
