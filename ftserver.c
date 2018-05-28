@@ -34,28 +34,28 @@
 #include <dirent.h>
 
 //function prototypes
-bool check_args(int argc, char *argv[]);
-void start_up(int port_num);
-void handle_command(int connection);
-void file_transfer(int connection, char *buffer);
+bool checkArgs(int argc, char *argv[]);
+void startup(int connectionPort);
+void handleRequest(int connection, int connectionPort, char *client_name);
+void fileTransfer(int connection, char *buffer, char type);
 
 int main(int argc, char *argv[])
 {
 	//make sure the user passed valid arguments
-	if(!check_args(argc, argv)){
+	if(!checkArgs(argc, argv)){
 		return 0;
 	}
 
 	//set port number	
-	int port_num = strtol(argv[1], NULL, 10);
+	int connectionPort = strtol(argv[1], NULL, 10);
 
 	//setup the  server and handle all incoming commands
-	start_up(port_num);
+	startup(connectionPort);
 	
 	return 0;
 }
 
-/* Function: check_args
+/* Function: checkArgs
  * --------------------
  *  Checks to make sure there are two arguments.
  *  Makes sure the portnumber is an unsigned int.
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
  *  returns: Returns true if correct number of 
  *  valid arguments, otherwise returns false.  
  */
-bool check_args(int argc, char *argv[])
+bool checkArgs(int argc, char *argv[])
 {
 	//make sure the user entered correct number of arguments.
 	if(argc != 2){
@@ -83,15 +83,15 @@ bool check_args(int argc, char *argv[])
 	return true;
 }
 
-/* Function: start_up
+/* Function: startup
  * --------------------------
  *  Starts up the server and listens
  *  for connections on the given port
  *  number.
  *
- *  port_num: The port number given on command line.
+ *  connectionPort: The port number given on command line.
  */
-void start_up(int port_num)
+void startup(int connectionPort)
 {
 	//setup variables
 	int socketFD, listen_socket, connection;
@@ -102,7 +102,7 @@ void start_up(int port_num)
 	//set up the server address struct
 	memset((char*)&server_address, '\0', sizeof(server_address)); //clear address struct
 	server_address.sin_family = AF_INET; //set address family
-	server_address.sin_port = htons(port_num); //save port number
+	server_address.sin_port = htons(connectionPort); //save port number
 	server_address.sin_addr.s_addr = INADDR_ANY; //we allow connection from any address
 
 	//set up socket
@@ -112,38 +112,45 @@ void start_up(int port_num)
 	bind(listen_socket, (struct sockaddr *)&server_address, sizeof(server_address)); //connect socket to port
 	listen(listen_socket, 10); //socket is now listening for a connection
 
-	printf("Server open on %d\n", port_num);	
+	printf("Server open on %d\n", connectionPort);	
 	
 	//we will keep looking for connections until we are terminated
 	while(1){
 		//accept the next connection
 		size_client_info = sizeof(client_address); //get the size of the address for the client that will connect
 		connection = accept(listen_socket, (struct sockaddr *)&client_address, &size_client_info); //accept
+		
 		//show the connecting client
 		char client_name[INET_ADDRSTRLEN];
+		memset(client_name, '\0', INET_ADDRSTRLEN);
 		inet_ntop(AF_INET, &client_address.sin_addr.s_addr, client_name, sizeof(client_name));
 		printf("Connection from %s\n", client_name);
 
 		//react to clients command
-		handle_command(connection);
+		handleRequest(connection, client_name);
 	}
 }
 
-/* Function: handle_command
+/* Function: handleRequest
  * --------------------------
- *  Receive a command from the client
+ *  Receive a request from the client
  *  and then send an appropriate response.
  *
  *  connection: The connection number.
  */
-void handle_command(int connection)
+void handleRequest(int connection, int connectionPort, char *client_name)
 {
 	//setup variables
-	int bufLen; //holds the buffer length
+	int bufLen, chars_written, chars_read;
+	char portBuffer[100];
+	char fileName[1000];
 	int bufSum = 0; //the number of chars we have writen to our buffer
-	int chars_read = 0;
 	char buffer[MAX_CHARS_MESSAGE + 1];
 	memset(buffer, '\0', MAX_CHARS_MESSAGE + 1);
+	
+	//remove the - from the portBuffer
+	portBuffer[bufLen - 2] = '\0';
+	int dataPort = strtol(portBuffer, NULL, 10);
 	
 	//read message from the client
 	do{
@@ -156,30 +163,7 @@ void handle_command(int connection)
 		}
 	} while(buffer[bufLen - 1] != '\n');
 
-	//show message from server
-	file_transfer(connection, buffer); 
-	close(connection);
-}
-
-/* Function: file_transfer
- * --------------------------
- *  User either starts by typing a message to 
- *  the server, or user types "\quit" to end the chat.
- *
- *  socketFD: The socket number.
- *  handle: Array that holds handle.
- *  handle_size: Size of the handle array.
- */
-void file_transfer(int connection, char *buffer)
-{
-	printf("THIS IS THE MESSAGE: %s\n", buffer);
-	//setup variables
-	int bufLen, chars_written, chars_read, list_mode, file_exists;
-	char portBuffer[100];
-	char fileName[1000];
-	int bufSum = 0; //the number of chars we have writen to our buffer
-	
-	//get the data port from the request
+	//get the data port
 	int i = 0;
 	do{
 		portBuffer[i] = buffer[i];
@@ -187,22 +171,12 @@ void file_transfer(int connection, char *buffer)
 		i++;
 	} while(portBuffer[bufLen - 2] != '-');
 
-	//see if the request asks for list or file
-	if(portBuffer[bufLen - 1] == 'l')
-	{
-		list_mode = true;
-	} else {
-		list_mode = false;
-	}
-	
-	//remove the - from the portBuffer
-	portBuffer[bufLen - 2] = '\0';
-	int dataPort = strtol(portBuffer, NULL, 10);
-	printf("THIS IS THE PORT: %d\n", dataPort);
+	//get the type of request
+	char type = portBuffer[bufLen - 1];
 	
 	//get requested file name if not list mode
 	int ii = 0;
-	if(!list_mode){
+	if(type == 'g'){
 		do{
 			fileName[ii] = buffer[i];
 			bufLen = strlen(fileName);
@@ -212,6 +186,40 @@ void file_transfer(int connection, char *buffer)
 		fileName[bufLen - 1] = '\0';
 	}
 
+	//print to server how request is being handled
+	if(type == 'l'){
+		printf("List directory requested on port %d\n", dataPort);	
+		printf("Sending directory contents to %s:%d\n", client_name, dataPort);	
+	} else {
+		printf("File \"%s\" requested on port %d\n", fileName, dataPort);
+		//confirm that the file exists
+		if( access( fileName, F_OK ) != -1 ) {
+			printf("Sending \"%s'\" to %s:%d\n", fileName, client_name, dataPort);
+		} else {
+			type = 'n';
+			printf("File not found. Sending error message to %s:%d\n", client_name, dataPort);
+		}	
+	}
+	
+	//transfer the file
+	fileTransfer(connection, buffer, type);
+
+	//close the control connection 
+	close(connection);
+}
+
+/* Function: fileTransfer
+ * --------------------------
+ *  User either starts by typing a message to 
+ *  the server, or user types "\quit" to end the chat.
+ *
+ *  socketFD: The socket number.
+ *  handle: Array that holds handle.
+ *  handle_size: Size of the handle array.
+ *  type: The type of request. List or get file.
+ */
+void fileTransfer(int connection, char *buffer, char type)
+{
 	//setup variables
 	int socketFD, listen_socket, data_connection;
 	struct sockaddr_in server_address, client_address;
@@ -231,39 +239,13 @@ void file_transfer(int connection, char *buffer)
 	bind(listen_socket, (struct sockaddr *)&server_address, sizeof(server_address)); //connect socket to port
 	listen(listen_socket, 10); //socket is now listening for a connection
 
-	if(list_mode){
-		printf("List directory requested on port %d\n", dataPort);	
-	} else {
-		printf("File \"%s\" requested on port %d\n", fileName, dataPort);
-		if( access( fileName, F_OK ) != -1 ) {
-			file_exists = true;
-		} else {
-			file_exists = false;
-		}	
-	}
 
 	//accept the next connection
 	size_client_info = sizeof(client_address); //get the size of the address for the client that will connect
 	data_connection = accept(listen_socket, (struct sockaddr *)&client_address, &size_client_info); //accept
 
-	//perform the correct action
-	char client_name[INET_ADDRSTRLEN];
-	inet_ntop(AF_INET, &client_address.sin_addr.s_addr, client_name, sizeof(client_name));
-	if(list_mode){
-		buffer = "-l\0";
-		printf("Sending directory contents to %s:%d\n", client_name, dataPort);	
-	} else {
-		if(file_exists){
-			buffer = "-g\0";
-			printf("Sending \"%s'\" to %s:%d\n", fileName, client_name, dataPort);
-		} else {
-			buffer = "-n\0";
-			printf("File not found. Sending error message to %s:%d\n", client_name, dataPort);
-		}	
-	}
-
 	//if in list mode show the contents of the current directory
-	if(list_mode) {
+	if(type == 'l'){
 		char *buffer_ptr = buffer[2];
 		struct dirent *dir_entry;
 		DIR *dir = opendir(".");
