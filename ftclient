@@ -46,16 +46,16 @@ def initiateContact(controlSocket, serverName, serverPort):
 # The request will either be for listing
 # the contents of the directory (-l) 
 # or for a file (-g).
-def makeRequest(dataPort, command, fileName, controlSocket):
+def makeRequest(dataPort, command, fileName, controlSocket, serverName):
 	#send a transfer request
-	request = str(dataPort) + command + fileName + "\n"
+	request = str(dataPort) + command + serverName + "@" + fileName + "\n"
 	controlSocket.send(request)
 
 # receiveFile
 # ------------
 # Connect to data port of ftserver.
 # Once connected receive file from server on data port.
-def receiveFile(dataSocket, serverName, serverPort, dataPort):
+def receiveFile(dataSocket, controlSocket, serverName, serverPort, dataPort):
 	#attempt to connect to data port for transfer at most five times
 	for i in range(0,5):	
 		try:
@@ -99,11 +99,11 @@ def main():
 	initiateContact(controlSocket, serverName, serverPort)	
 	
 	#send a request for a file or list to server
-	makeRequest(dataPort, command, fileName, controlSocket)
+	makeRequest(dataPort, command, fileName, controlSocket, serverName)
 
 	#establish data port connection and receive file
 	dataSocket = socket(AF_INET, SOCK_STREAM)
-	receiveFile(dataSocket, serverName, serverPort, dataPort)
+	receiveFile(dataSocket, controlSocket, serverName, serverPort, dataPort)
 
 if __name__ == "__main__":
 	main()

@@ -36,7 +36,7 @@
 //function prototypes
 bool checkArgs(int argc, char *argv[]);
 void startup(int controlPort);
-void handleRequest(int controlConnection, int controlPort, char *clientName, char *serverName);
+void handleRequest(int controlConnection, int controlPort, char *clientName);
 void fileTransfer(char *buffer, char type, int dataPort);
 
 int main(int argc, char *argv[])
@@ -126,13 +126,8 @@ void startup(int controlPort)
 		inet_ntop(AF_INET, &clientAddress.sin_addr.s_addr, clientName, sizeof(clientName));
 		printf("Connection from %s\n", clientName);
 
-		//get name of server to pass
-		char serverName[INET_ADDRSTRLEN];
-		memset(serverName, '\0', INET_ADDRSTRLEN);
-		inet_ntop(AF_INET, &serverAddress.sin_addr.s_addr, serverName, sizeof(serverName));
-
 		//react to clients command
-		handleRequest(controlConnection, controlPort, clientName, serverName);
+		handleRequest(controlConnection, controlPort, clientName);
 	}
 }
 
@@ -143,11 +138,12 @@ void startup(int controlPort)
  *
  *  controlConnection: The connection number.
  */
-void handleRequest(int controlConnection, int controlPort, char *clientName, char *serverName)
+void handleRequest(int controlConnection, int controlPort, char *clientName)
 {
 	//setup variables
 	int bufLen, charsRead;
 	char portBuffer[100];
+	char serverName[1000];
 	char fileName[1000];
 	int bufSum = 0; //the number of chars we have writen to our buffer
 	char buffer[MAX_CHARS_MESSAGE + 1];
@@ -179,15 +175,25 @@ void handleRequest(int controlConnection, int controlPort, char *clientName, cha
 	portBuffer[bufLen - 2] = '\0';
 	int dataPort = strtol(portBuffer, NULL, 10);
 	
-	//get requested file name if not list mode
+	//get the server name
 	int ii = 0;
+	do{
+		serverName[ii] = buffer[i];
+		bufLen = strlen(serverName);
+		i++;
+		ii++;
+	} while(serverName[bufLen - 1] != '\n');
+	serverName[bufLen - 1] = '\0';
+	
+	//get requested file name if not list mode
+	ii = 0;
 	if(type == 'g'){
 		do{
 			fileName[ii] = buffer[i];
 			bufLen = strlen(fileName);
 			i++;
 			ii++;
-		} while(fileName[bufLen - 1] != '\n');
+		} while(fileName[bufLen - 1] != '@');
 		fileName[bufLen - 1] = '\0';
 	}
 
@@ -195,7 +201,7 @@ void handleRequest(int controlConnection, int controlPort, char *clientName, cha
 	if(type == 'l'){
 		printf("List directory requested on port %d\n", dataPort);	
 		printf("Sending directory contents to %s:%d\n", clientName, dataPort);	
-		sprintf(buffer, "Receiving directory structure from %s:%d\n", serverName, controlPort);
+		sprintf(buffer, "Receiving directory structure from %s:%d", serverName, controlPort);
 	} else {
 		printf("File \"%s\" requested on port %d\n", fileName, dataPort);
 		//confirm that the file exists
@@ -205,7 +211,7 @@ void handleRequest(int controlConnection, int controlPort, char *clientName, cha
 		} else {
 			type = 'n';
 			printf("File not found. Sending error message to %s:%d\n", clientName, dataPort);
-			sprintf(buffer, "%s:%d says FILE NOT FOUND\n", serverName, controlPort);
+			sprintf(buffer, "%s:%d says FILE NOT FOUND", serverName, controlPort);
 		}	
 	}
 	
@@ -256,16 +262,14 @@ void fileTransfer(char *buffer, char type, int dataPort)
 
 	//send file
 	if(type == 'l'){
-		char *buffer_ptr = &buffer[2];
+		char *buffer_ptr = buffer;
 		struct dirent *dir_entry;
 		DIR *dir = opendir(".");
 		while((dir_entry = readdir(dir)) != NULL) {
 			buffer_ptr += sprintf(buffer_ptr, "%s ", dir_entry->d_name);
 		}
-		sprintf(buffer_ptr, "\n\0");
-		printf("%s", buffer);
 	} else if (type == 'g'){
-		sprintf(buffer, "A FILE\n");
+		sprintf(buffer, "A FILE");
 	} else {
 		//no valid file to send
 		close(dataConnection);
