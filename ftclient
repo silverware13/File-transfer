@@ -56,27 +56,36 @@ def makeRequest(dataPort, command, fileName, controlSocket, serverName):
 # ------------
 # Connect to data port of ftserver.
 # Once connected receive file from server on data port.
-def receiveFile(dataSocket, controlSocket, serverName, serverPort, dataPort):
-	#attempt to connect to data port for transfer at most five times
-	for i in range(0,5):	
-		try:
-			dataSocket.connect((serverName, dataPort))
-			break
-		except:
-			if (i == 4):
-    				print "Failed to connect to server data port"
-				sys.exit(1)
-			time.sleep(1)
+def receiveFile(dataSocket, controlSocket, serverName, serverPort, dataPort, fileName):
+	#attempt to connect to data port for transfer
+	time.sleep(2)
+	try:
+		dataSocket.connect((serverName, dataPort))
+	except:
+    		print "Failed to connect to server data port"
+		controlSocket.close()
+		sys.exit(1)
 	
-	#receive and print message from sever 
+	#receive and print message from server 
 	fileContents = controlSocket.recv(1000)
 	print fileContents
-	if "FILE NOT FOUND" in fileContents
+
+	#if message says the file was not found we are done
+	if "FILE NOT FOUND" in fileContents:
 		dataSocket.close()
 		controlSocket.close()
 		sys.exit(0)
 
-	#receive file from server	
+	#receive file
+	if fileName:
+		fileContents = dataSocket.recv(5000000)
+		dataSocket.close()
+		controlSocket.close()
+		with open(fileName, "w") as text_file:
+			text_file.write(fileContents)	
+		sys.exit(0)
+
+	#receive list from server	
 	fileContents = dataSocket.recv(5000000)
 	print fileContents
 
@@ -103,6 +112,7 @@ def main():
 			sys.exit(1)
 	else:
 		dataPort = int(sys.argv[4])
+		fileName = ''
 	
 	#connect to a ftserver on the control port
 	controlSocket = socket(AF_INET, SOCK_STREAM)
@@ -113,7 +123,7 @@ def main():
 
 	#establish data port connection and receive file
 	dataSocket = socket(AF_INET, SOCK_STREAM)
-	receiveFile(dataSocket, controlSocket, serverName, serverPort, dataPort)
+	receiveFile(dataSocket, controlSocket, serverName, serverPort, dataPort, fileName)
 
 if __name__ == "__main__":
 	main()

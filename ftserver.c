@@ -128,6 +128,9 @@ void startup(int controlPort)
 
 		//react to clients command
 		handleRequest(controlConnection, controlPort, clientName);
+	
+		//close the connection 
+		close(controlConnection);
 	}
 }
 
@@ -146,8 +149,9 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 	char serverName[1000];
 	char fileName[1000];
 	int bufSum = 0; //the number of chars we have writen to our buffer
-	char buffer[MAX_CHARS_MESSAGE + 1];
-	memset(buffer, '\0', MAX_CHARS_MESSAGE + 1);
+	char *buffer;
+	buffer = (char *)malloc(MAX_CHARS_MESSAGE * sizeof(char));
+	memset(buffer, '\0', MAX_CHARS_MESSAGE);
 	
 	//read message from the client
 	do{
@@ -201,16 +205,19 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 	if(type == 'l'){
 		printf("List directory requested on port %d\n", dataPort);	
 		printf("Sending directory contents to %s:%d\n\n", clientName, dataPort);	
+		memset(buffer, '\0', MAX_CHARS_MESSAGE);
 		sprintf(buffer, "Receiving directory structure from %s:%d", serverName, dataPort);
 	} else {
 		printf("File \"%s\" requested on port %d\n", fileName, dataPort);
 		//confirm that the file exists
 		if( access( fileName, F_OK ) != -1 ) {
 			printf("Sending \"%s'\" to %s:%d\n\n", fileName, clientName, dataPort);
+			memset(buffer, '\0', MAX_CHARS_MESSAGE);
 			sprintf(buffer, "Receiving \"%s\" from %s:%d\n", fileName, serverName, dataPort);
 		} else {
 			type = 'n';
 			printf("File not found. Sending error message to %s:%d\n\n", clientName, dataPort);
+			memset(buffer, '\0', MAX_CHARS_MESSAGE);
 			sprintf(buffer, "%s:%d says FILE NOT FOUND", serverName, controlPort);
 		}	
 	}
@@ -227,9 +234,6 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 	
 	//transfer the file
 	fileTransfer(buffer, type, dataPort);
-
-	//close the control connection 
-	close(controlConnection);
 }
 
 /* Function: fileTransfer
@@ -251,15 +255,25 @@ void fileTransfer(char *buffer, char type, int dataPort)
 
 	//set up socket
 	listen_socket = socket(AF_INET, SOCK_STREAM, 0); //create the socket
+	if(listen_socket < 0){
+		fprintf(stderr, "Error on data socket\n");
+		return;
+	}	
 
 	//start listening with current socket for any incoming controlConnections
 	bind(listen_socket, (struct sockaddr *)&serverAddress, sizeof(serverAddress)); //connect socket to port
-	listen(listen_socket, 10); //socket is now listening for a connection
-
+	listen(listen_socket, 10); //socket is now listening for a dataConnection
+	
+	printf("LISTENING FOR DATA CONNECTION\n");
 	//accept the next connection
 	size_client_info = sizeof(clientAddress); //get the size of the address for the client that will connect
 	dataConnection = accept(listen_socket, (struct sockaddr *)&clientAddress, &size_client_info); //accept
-
+	if(dataConnection < 0){
+		fprintf(stderr, "Error on data accept\n");
+		return;	
+	}
+	printf("ABOUT TO SEND FILEEEE\n");
+	
 	//send file
 	if(type == 'l'){
 		char *buffer_ptr = buffer;
@@ -286,5 +300,4 @@ void fileTransfer(char *buffer, char type, int dataPort)
 		}
 	} while(charsWritten < strlen(buffer));
 	close(dataConnection);
-	printf("\n");
 }
