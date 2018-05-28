@@ -66,21 +66,16 @@ def receiveFile(dataSocket, serverName, serverPort, dataPort):
     				print "Failed to connect to server data port"
 				sys.exit(1)
 			time.sleep(1)
-
-	#receive file transfer
-	transfer = 0
-	fileContents = dataSocket.recv(2)
-	if (fileContents == "-l"):
-		print "Receiving directory structure from " + serverName + ":" + serverPort
-	elif (fileContents == "-g"):
-		transfer = 1
-		print "Receiving \"" + fileName + "\" from " + serverName + ":" + serverPort
-	else:
-		print serverName + ":" + serverPort + " says FILE NOT FOUND"
-	fileContents = dataSocket.recv(5000000)
-	#if transfer
-		
+	
+	#receive and print message from sever 
+	fileContents = controlSocket.recv(1000)
 	print fileContents
+
+	#receive file from server	
+	fileContents = dataSocket.recv(5000000)
+	print fileContents
+
+	#close both connections	
 	dataSocket.close()
 	controlSocket.close()	
 
