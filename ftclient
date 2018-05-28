@@ -15,108 +15,100 @@ from socket import *
 import sys
 import time
 
-# start_up
-# -------
-# setup the server, get a handle, listen for connections.
-# when a connection is made accept and receive messages
-# until one side quits. When that happens resume listening.
-def start_up():
+# validateInput
+# -------------
+# Validate that the input is valid from the command line.
+def validateInput(): 
 	#confirm command line arguments include port number
 	if (len(sys.argv) < 5 or len(sys.argv) > 6):
 		print "Useage: " + str(sys.argv[0]) + " [server address] [server port] [command] [filename] [data port]" 
 		sys.exit(0)
+	
+	#confirm a valid command was used
+	if (sys.argv[3] != "-l" and sys.argv[3] != "-g"):
+		print "Invalid command. Valid commands are -g or -l"
+		sys.exit(0)
 
+# initiateContact
+# -------
+# Sets up a control connection with a ftserver. 
+def initiateContact(controlSocket, serverName, serverPort):
+	#attempt to connect to the server
+	try:
+		controlSocket.connect((serverName, serverPort))
+	except:
+    		print "Failed to connect to server"
+		sys.exit(1)
+	
+# makeRequest 
+# ------------
+# Send a request to the server.
+# The request will either be for listing
+# the contents of the directory (-l) 
+# or for a file (-g).
+def makeRequest(dataPort, command, fileName, controlSocket):
+	#send a transfer request
+	request = str(dataPort) + command + fileName + "\n"
+	controlSocket.send(request)
+
+# receiveFile
+# ------------
+# Connect to data port of ftserver.
+# Once connected receive file from server on data port.
+def receiveFile(dataSocket, serverName, serverPort, dataPort):
+	#attempt to connect to data port for transfer at most five times
+	for i in range(0,5):	
+		try:
+			dataSocket.connect((serverName, dataPort))
+			break
+		except:
+			if (i == 4):
+    				print "Failed to connect to server data port"
+				sys.exit(1)
+			time.sleep(1)
+
+	#receive file transfer
+	transfer = 0
+	fileContents = dataSocket.recv(2)
+	if (fileContents == "-l"):
+		print "Receiving directory structure from " + serverName + ":" + serverPort
+	elif (fileContents == "-g"):
+		transfer = 1
+		print "Receiving \"" + fileName + "\" from " + serverName + ":" + serverPort
+	else:
+		print serverName + ":" + serverPort + " says FILE NOT FOUND"
+	fileContents = dataSocket.recv(5000000)
+	#if transfer
+		
+	print fileContents
+	dataSocket.close()
+	controlSocket.close()	
+
+def main():
+	#confirm that input was valid
+	validateInput()
+	
+	#define command line arguments by name
 	serverName = sys.argv[1]
 	serverPort = int(sys.argv[2])
 	command	= sys.argv[3]
 
-	#if we don't enter a file name then take the dataPort only
+	#if we don't enter a file name then accept argument four as the data port
 	if (len(sys.argv) == 6):
 		fileName = sys.argv[4]
 		dataPort = int(sys.argv[5])
 	else:
 		dataPort = int(sys.argv[4])
-
-	#confirm a valid command was used
-	if (command != "-l" and command != "-g"):
-		print "Invalid command. Valid commands are -g or -l"
-		sys.exit(0)
-
-	#attempt to connect to the server
-	clientSocket = socket(AF_INET, SOCK_STREAM)
-	try:
-		clientSocket.connect((serverName, serverPort))
-	except:
-    		print "Failed to connect to server"
-		sys.exit(1)
-
-	#send a transfer request
-	request = str(dataPort) + command + fileName + "\n"
-	clientSocket.send(request)
-	time.sleep(2)
+	#connect to a ftserver on the control port
+	controlSocket = socket(AF_INET, SOCK_STREAM)
+	initiateContact(controlSocket, serverName, serverPort)	
 	
-	#attempt to connect for transfer
+	#send a request for a file or list to server
+	makeRequest(dataPort, command, fileName, controlSocket)
+
+	#establish data port connection and receive file
 	dataSocket = socket(AF_INET, SOCK_STREAM)
-	try:
-		dataSocket.connect((serverName, dataPort))
-	except:
-    		print "Failed to connect to server data port"
-		sys.exit(1)
-
-	#receive file transfer	
-	fileContents = dataSocket.recv(5000000)
-	print'From Server:', fileContents
-	dataSocket.close()
-	clientSocket.close()	
-	
-# receive_message
-# ------------
-# get a message from the client.
-# If the client quit we return to listening
-# for a new connection.
-#
-# connectionSocket: The current socket being used.
-#
-# return: Returns true if received a message. Returns false if the client quit.
-def receive_message(connectionSocket):
-	#get message from client and remove newline
-	clientMessage = connectionSocket.recv(1024)
-	clientMessage = clientMessage.rstrip()
-
-	#if client quit stop here
-	if(clientMessage == "\quit"):
-		connectionSocket.close()
-		return False
-	
-	#print clients message	
-	print clientMessage
-	return True
-
-# send_message
-# ------------
-# send a message to the client or quit.
-# If we quit let the client know.
-#
-# handle: The handle the user selected previously.
-# connectionSocket: The current socket being used.
-#
-# return: Returns true if we sent a message. Returns false if we quit.
-def send_message(handle, connectionSocket):
-	#get message from user
-	serverMessage = raw_input(handle + "> ")
-		
-	#if we typed /quit instead of a message let client know
-	if(serverMessage == "\quit"):
-		connectionSocket.send(serverMessage + '\n')
-		connectionSocket.close()
-		return False
-
-	#send message to client
-	connectionSocket.send(handle + "> " + serverMessage[:500] + '\n')
-	return True
-
-def main():
-	start_up()
+	receiveFile(dataSocket, serverName, serverPort, dataPort)
 
 if __name__ == "__main__":
 	main()

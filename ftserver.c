@@ -17,6 +17,8 @@
  * Reviewed my code from our last assignment (project1)
  * https://github.com/silverware13/Chat/blob/master/chatclient.c
  *
+ * Found a refrence to how to use dirent.h to list the content of directories.
+ * https://www.geeksforgeeks.org/c-program-list-files-sub-directories-directory/
  */
 
 #define MAX_CHARS_MESSAGE 5000000
@@ -248,21 +250,24 @@ void file_transfer(int connection, char *buffer)
 	char client_name[INET_ADDRSTRLEN];
 	inet_ntop(AF_INET, &client_address.sin_addr.s_addr, client_name, sizeof(client_name));
 	if(list_mode){
+		buffer = "-l\0";
 		printf("Sending directory contents to %s:%d\n", client_name, dataPort);	
 	} else {
 		if(file_exists){
+			buffer = "-g\0";
 			printf("Sending \"%s'\" to %s:%d\n", fileName, client_name, dataPort);
 		} else {
+			buffer = "-n\0";
 			printf("File not found. Sending error message to %s:%d\n", client_name, dataPort);
 		}	
 	}
 
 	//if in list mode show the contents of the current directory
 	if(list_mode) {
-		char *buffer_ptr = buffer;
+		char *buffer_ptr = buffer[2];
 		struct dirent *dir_entry;
 		DIR *dir = opendir(".");
-		while(!dirent(dir)) {
+		while((dir_entry = readdir(dir)) != NULL) {
 			buffer_ptr += sprintf(buffer_ptr, "%s ", dir_entry->d_name);
 		}
 		sprintf(buffer_ptr, "\n\0");
