@@ -29,6 +29,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <stdbool.h>
+#include <dirent.h>
 
 //function prototypes
 bool check_args(int argc, char *argv[]);
@@ -254,6 +255,18 @@ void file_transfer(int connection, char *buffer)
 		} else {
 			printf("File not found. Sending error message to %s:%d\n", client_name, dataPort);
 		}	
+	}
+
+	//if in list mode show the contents of the current directory
+	if(list_mode) {
+		char *buffer_ptr = buffer;
+		struct dirent *dir_entry;
+		DIR *dir = opendir(".");
+		while(!dirent(dir)) {
+			buffer_ptr += sprintf(buffer_ptr, "%s ", dir_entry->d_name);
+		}
+		sprintf(buffer_ptr, "\n\0");
+		printf("%s", buffer);
 	}
 
 	//send file to client
