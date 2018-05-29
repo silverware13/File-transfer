@@ -28,7 +28,7 @@
  * https://www.geeksforgeeks.org/c-program-list-files-sub-directories-directory/
  */
 
-#define MAX_CHARS_MESSAGE 5000000
+#define MAX_CHARS_MESSAGE 900000000
 #define MAX_CHARS_FILE_NAME 10000
 #include <stdio.h>
 #include <stdlib.h>

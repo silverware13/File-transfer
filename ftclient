@@ -95,7 +95,7 @@ def receiveFile(dataSocket, controlSocket, serverName, serverPort, dataPort, fil
 
 	#receive file
 	if fileName:
-		fileContents = dataSocket.recv(5000000)
+		fileContents = dataSocket.recv(900000000)
 		dataSocket.close()
 		controlSocket.close()
 		with open(fileName, "w") as text_file:
