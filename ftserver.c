@@ -30,6 +30,7 @@
 
 #define MAX_CHARS_MESSAGE 900000000
 #define MAX_CHARS_FILE_NAME 10000
+#define MAX_FIELD_SIZE 100
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -156,12 +157,12 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 {
 	//setup variables
 	int bufLen, charsRead;
-	char portBuffer[100];
-	char serverName[100];
+	char portBuffer[MAX_FIELD_SIZE];
+	char serverName[MAX_FIELD_SIZE];
 	int bufSum = 0; //the number of chars we have writen to our buffer
 	char *fileName;
-	fileName = (char *)malloc(MAX_CHARS_FILE_NAME * sizeof(char));
-	memset(fileName, '\0', MAX_CHARS_FILE_NAME);
+	fileName = (char *)malloc(MAX_FIELD_SIZE * sizeof(char));
+	memset(fileName, '\0', MAX_FIELD_SIZE);
 	char *buffer;
 	buffer = (char *)malloc(MAX_CHARS_MESSAGE * sizeof(char));
 	memset(buffer, '\0', MAX_CHARS_MESSAGE);
@@ -176,6 +177,7 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 			exit(2); 
 		}
 	} while(buffer[bufLen - 1] != '\n');
+	printf("%s\n", buffer);
 
 	//get the data port
 	int i = 0;
@@ -183,6 +185,7 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 		portBuffer[i] = buffer[i];
 		bufLen = strlen(portBuffer);
 		i++;
+		if(i == MAX_FIELD_SIZE) break;
 	} while(portBuffer[bufLen - 2] != '-');
 
 	//get the type of request
@@ -199,6 +202,7 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 		bufLen = strlen(serverName);
 		i++;
 		ii++;
+		if(ii == MAX_FIELD_SIZE) break;
 	} while(serverName[bufLen - 1] != '@');
 	serverName[bufLen - 1] = '\0';
 	
@@ -210,6 +214,7 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 			bufLen = strlen(fileName);
 			i++;
 			ii++;
+			if(ii == MAX_FIELD_SIZE) break;
 		} while(fileName[bufLen - 1] != '\n');
 		fileName[bufLen - 1] = '\0';
 	}
