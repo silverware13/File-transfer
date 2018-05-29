@@ -325,8 +325,6 @@ void fileTransfer(char *buffer, char type, int dataPort, char *fileName)
 		fread(buffer, sizeof(char), fileSize, fp);
 		//add a special end of file string
 		sprintf(buffer + strlen(buffer), "!$@$!");
-		printf("FILESIZE: %d\n", fileSize);
-		printf("BUFFERSIZE: %d\n", strlen(buffer));
 
 		//close the file
 		fclose(fp);
