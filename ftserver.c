@@ -199,6 +199,7 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 		bufLen = strlen(serverName);
 		i++;
 		ii++;
+		if(buffer[i] == NULL) break;
 	} while(serverName[bufLen - 1] != '@');
 	serverName[bufLen - 1] = '\0';
 	
@@ -223,7 +224,7 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 	} else {
 		printf("File \"%s\" requested on port %d\n", fileName, dataPort);
 		//confirm that the file exists
-		if( access( fileName, F_OK ) != -1 ) {
+		if(access(fileName, F_OK) != -1){
 			printf("Sending \"%s'\" to %s:%d\n\n", fileName, clientName, dataPort);
 			memset(buffer, '\0', MAX_CHARS_MESSAGE);
 			sprintf(buffer, "Receiving \"%s\" from %s:%d", fileName, serverName, dataPort);

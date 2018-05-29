@@ -13,7 +13,7 @@ gcc -o ftserver ftserver.c
 
 We will start the server on port 12556 (or use any port you like):
 
-./ftserve 12556
+./ftserver 12556
 
 ---------------------------------------------------------
 Terminal #2:
@@ -31,15 +31,15 @@ I will refrence them as "small.txt" and "large.txt" please adjust them to whatev
 
 We will start by geting the "small.txt" file from the server.
 
-ftclient localhost 55468 -g small.txt 55677
+ftclient localhost 12556 -g small.txt 55677
 
 Next we will get the "large.txt" file from the server.
 
-ftclient localhost 25262 -g large.txt 35373
+ftclient localhost 12556 -g large.txt 35373
 
 and last lets try getting a text file that does not exist.
 
-ftclient localhost 11235 -g no.txt 511344
+ftclient localhost 12556 -g no.txt 511344
 ----------------------------------------------------------
 
 At this point testing is complete. We have seen the results of
