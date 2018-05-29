@@ -322,7 +322,11 @@ void fileTransfer(char *buffer, char type, int dataPort, char *fileName)
 		fseek(fp, 0L, SEEK_SET);
 
 		//read the file into buffer
-		fread(buffer, sizeof(char), fileSize, fp);		
+		fread(buffer, sizeof(char), fileSize, fp);
+		//add a special end of file string
+		sprintf(buffer + strlen(buffer), "!$@$!");
+		printf("FILESIZE: %d\n", fileSize);
+		printf("BUFFERSIZE: %d\n", strlen(buffer));
 
 		//close the file
 		fclose(fp);

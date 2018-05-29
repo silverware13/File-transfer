@@ -95,7 +95,12 @@ def receiveFile(dataSocket, controlSocket, serverName, serverPort, dataPort, fil
 
 	#receive file
 	if fileName:
-		fileContents = dataSocket.recv(900000000)
+		#keep receiving until we get the whole file
+		fileContents = ""
+		while "!$@$!" not in fileContents:
+			fileContents += dataSocket.recv(5000)
+		fileContents = fileContents[:-5]
+		#close connections
 		dataSocket.close()
 		controlSocket.close()
 		with open(fileName, "w") as text_file:
@@ -104,7 +109,7 @@ def receiveFile(dataSocket, controlSocket, serverName, serverPort, dataPort, fil
 		sys.exit(0)
 
 	#receive list from server	
-	fileContents = dataSocket.recv(5000000)
+	fileContents = dataSocket.recv(10000)
 	print fileContents
 
 	#close both connections	
