@@ -5,7 +5,14 @@
  * Email: thomasza@oregonstate.edu
  * Date: 5/19/2018
  * -----------------
- * Server for file transfer.
+ * Starts up a server that listens
+ * for control connections on a control port.
+ * After receiving a connection will communicate with
+ * client and take request. If a file is requested
+ * that file is sent over a new connection on the data port.
+ * after request has been handled the server closes the 
+ * control and data port connections and waits for a new
+ * request.
  * -----------------------
  * Cited references:
  * 
@@ -22,7 +29,7 @@
  */
 
 #define MAX_CHARS_MESSAGE 5000000
-#define MAX_CHARS_FILE_NAME 1000
+#define MAX_CHARS_FILE_NAME 10000
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -87,7 +94,7 @@ bool checkArgs(int argc, char *argv[])
 /* Function: startup
  * --------------------------
  *  Starts up the server and listens
- *  for controlConnections on the given port
+ *  for control connections on the given port
  *  number.
  *
  *  controlPort: The port number given on command line.
@@ -130,28 +137,32 @@ void startup(int controlPort)
 		//react to clients command
 		handleRequest(controlConnection, controlPort, clientName);
 	
-		//close the connection 
+		//close the connection
+		sleep(1); 
 		close(controlConnection);
 	}
 }
 
 /* Function: handleRequest
  * --------------------------
- *  Receive a request from the client
- *  and then send an appropriate response.
+ *  Receive a request from the client,
+ *  interprets the request, and then send an 
+ *  appropriate response.
  *
  *  controlConnection: The connection number.
+ *  controlPort: The connection port.
+ *  clientName: A string of the clients address.
  */
 void handleRequest(int controlConnection, int controlPort, char *clientName)
 {
 	//setup variables
 	int bufLen, charsRead;
 	char portBuffer[100];
-	char serverName[1000];
+	char serverName[100];
 	int bufSum = 0; //the number of chars we have writen to our buffer
 	char *fileName;
 	fileName = (char *)malloc(MAX_CHARS_FILE_NAME * sizeof(char));
-	memset(fileName, '\0', MAX_CHARS_MESSAGE);
+	memset(fileName, '\0', MAX_CHARS_FILE_NAME);
 	char *buffer;
 	buffer = (char *)malloc(MAX_CHARS_MESSAGE * sizeof(char));
 	memset(buffer, '\0', MAX_CHARS_MESSAGE);
@@ -192,6 +203,7 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 	} while(serverName[bufLen - 1] != '@');
 	serverName[bufLen - 1] = '\0';
 	
+	printf("TEST_Z\n");	
 	//get requested file name if not list mode
 	ii = 0;
 	if(type == 'g'){
@@ -203,6 +215,7 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 		} while(fileName[bufLen - 1] != '\n');
 		fileName[bufLen - 1] = '\0';
 	}
+	printf("TEST_X\n");	
 
 	//calculate how request should be handled
 	if(type == 'l'){
@@ -241,6 +254,14 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 
 /* Function: fileTransfer
  * --------------------------
+ *  Creates a data connection.
+ *  Sends a file to the client and 
+ *  then closes the data connection.
+ *
+ *  buffer: A buffer that holds file info or listing info to be sent to the client.
+ *  type: The type of request sent.
+ *  dataPort: The port number for the data port.
+ *  fileName: The name of the requested file. 
  */
 void fileTransfer(char *buffer, char type, int dataPort, char *fileName)
 {
@@ -278,21 +299,34 @@ void fileTransfer(char *buffer, char type, int dataPort, char *fileName)
 	//get data that needs to be sent
 	if(type == 'l'){
 		//get the contents of current directory and put it into the buffer
-		char *buffer_ptr = buffer;
+		char *bufferPtr = buffer;
 		struct dirent *dir_entry;
 		DIR *dir = opendir(".");
 		while((dir_entry = readdir(dir)) != NULL) {
-			buffer_ptr += sprintf(buffer_ptr, "%s ", dir_entry->d_name);
+			bufferPtr += sprintf(bufferPtr, "%s ", dir_entry->d_name);
 		}
 	} else if (type == 'g'){
 		//get the contents of file and put it into the buffer
-		FILE *fp = fopen(fileName, "w");
-		while(fgets(buffer, 50, fp)){
-			printf("%s\n", buffer);
-		}
+		memset(buffer, '\0', MAX_CHARS_MESSAGE);
+		
+		//open the file
+		FILE *fp = fopen(fileName, "r");
+		if(!fp) fprintf(stderr, "Error could not open file");
+
+		//get the size of the file
+		int fileSize;
+		fseek(fp, 0L, SEEK_END);
+		fileSize = ftell(fp);
+		fseek(fp, 0L, SEEK_SET);
+
+		//read the file into buffer
+		fread(buffer, sizeof(char), fileSize, fp);		
+
+		//close the file
 		fclose(fp);
 	} else {
 		//no valid file to send
+		sleep(1);
 		close(dataConnection);
 		return;
 	}
@@ -306,5 +340,6 @@ void fileTransfer(char *buffer, char type, int dataPort, char *fileName)
 			exit(2); 
 		}
 	} while(charsWritten < strlen(buffer));
+	sleep(1);
 	close(dataConnection);
 }
