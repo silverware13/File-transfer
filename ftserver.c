@@ -138,7 +138,6 @@ void startup(int controlPort)
 		handleRequest(controlConnection, controlPort, clientName);
 	
 		//close the connection
-		sleep(1); 
 		close(controlConnection);
 	}
 }
@@ -324,7 +323,6 @@ void fileTransfer(char *buffer, char type, int dataPort, char *fileName)
 		fclose(fp);
 	} else {
 		//no valid file to send
-		sleep(1);
 		close(dataConnection);
 		return;
 	}
@@ -338,6 +336,5 @@ void fileTransfer(char *buffer, char type, int dataPort, char *fileName)
 			exit(2); 
 		}
 	} while(charsWritten < strlen(buffer));
-	sleep(1);
 	close(dataConnection);
 }
