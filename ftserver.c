@@ -199,7 +199,6 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 		bufLen = strlen(serverName);
 		i++;
 		ii++;
-		if(buffer[i] == NULL) break;
 	} while(serverName[bufLen - 1] != '@');
 	serverName[bufLen - 1] = '\0';
 	
