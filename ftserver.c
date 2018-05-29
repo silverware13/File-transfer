@@ -103,7 +103,7 @@ bool checkArgs(int argc, char *argv[])
 void startup(int controlPort)
 {
 	//setup variables
-	int socketFD, listen_socket, controlConnection;
+	int socketFD, listenSocket, controlConnection;
 	struct sockaddr_in serverAddress, clientAddress;
 	struct hostent* server_host_info;
 	socklen_t size_client_info;	
@@ -115,36 +115,50 @@ void startup(int controlPort)
 	serverAddress.sin_addr.s_addr = INADDR_ANY; //we allow controlConnection from any address
 
 	//set up socket
-	listen_socket = socket(AF_INET, SOCK_STREAM, 0); //create the socket
+	listenSocket = socket(AF_INET, SOCK_STREAM, 0); //create the socket
 
 	//start listening with current socket for any incoming controlConnections
-	bind(listen_socket, (struct sockaddr *)&serverAddress, sizeof(serverAddress)); //connect socket to port
-	listen(listen_socket, 10); //socket is now listening for a controlConnection
+	bind(listenSocket, (struct sockaddr *)&serverAddress, sizeof(serverAddress)); //connect socket to port
+	listen(listenSocket, 10); //socket is now listening for a controlConnection
 
 	printf("Server open on %d\n\n", controlPort);	
 	
-	//we will keep looking for controlConnections until we are terminated
+	//we will keep looking for control connections until we are terminated
 	while(1){
-		//accept the next controlConnection
+		//accept the next control connection
 		size_client_info = sizeof(clientAddress); //get the size of the address for the client that will connect
-		controlConnection = accept(listen_socket, (struct sockaddr *)&clientAddress, &size_client_info); //accept
-		
-		//show the connecting client
-		char clientName[INET_ADDRSTRLEN];
-		memset(clientName, '\0', INET_ADDRSTRLEN);
-		inet_ntop(AF_INET, &clientAddress.sin_addr.s_addr, clientName, sizeof(clientName));
-		printf("Connection from %s\n", clientName);
+		controlConnection = accept(listenSocket, (struct sockaddr *)&clientAddress, &size_client_info); //accept
 
-		//react to clients command
-		handleRequest(controlConnection, controlPort, clientName);
+		//fork the accepted connection
+		pid_t spawnPID = -5;
+		spawnPID = fork();
 
-		//free memory
-		free(fileName);		
-		free(buffer);		
+		//check for error, child, parent
+		switch(spawnPID){
+
+			//fork failed
+			case -1:{
+				fprintf(stderr, "Error trying to fork.\n");
+				exit(2); 
+			}
+			
+			//the child handles the request
+			case 0:{
+				//show the connecting client
+				char clientName[INET_ADDRSTRLEN];
+				memset(clientName, '\0', INET_ADDRSTRLEN);
+				inet_ntop(AF_INET, &clientAddress.sin_addr.s_addr, clientName, sizeof(clientName));
+				printf("Connection from %s\n", clientName);
+
+				//react to clients command
+				handleRequest(controlConnection, controlPort, clientName);
 	
-		//close the connection
-		close(controlConnection);
+				//close the connection
+				close(controlConnection);
+			}
+		} 	
 	}
+	close(listenSocket);
 }
 
 /* Function: handleRequest
@@ -161,8 +175,8 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 {
 	//setup variables
 	int bufLen, charsRead;
-	char portBuffer[MAX_FIELD_SIZE];
-	char serverName[MAX_FIELD_SIZE];
+	char portBuffer[MAX_FIELD_SIZE] = {0};
+	char serverName[MAX_FIELD_SIZE] = {0};
 	int bufSum = 0; //the number of chars we have writen to our buffer
 	char *fileName;
 	fileName = (char *)malloc(MAX_FIELD_SIZE * sizeof(char));
@@ -181,7 +195,6 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 			exit(2); 
 		}
 	} while(buffer[bufLen - 1] != '\n');
-	printf("%s\n", buffer);
 
 	//get the data port
 	int i = 0;
@@ -243,6 +256,8 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 			sprintf(buffer, "%s:%d says FILE NOT FOUND", serverName, controlPort);
 		}	
 	}
+	//add a special end of file string
+	sprintf(buffer + strlen(buffer), "!$@$!");
 	
 	//send message to client on control connection 
 	int charsWritten = 0;
@@ -272,7 +287,7 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 void fileTransfer(char *buffer, char type, int dataPort, char *fileName)
 {
 	//setup variables
-	int socketFD, listen_socket, dataConnection;
+	int socketFD, listenSocket, dataConnection;
 	struct sockaddr_in serverAddress, clientAddress;
 	struct hostent* server_host_info;
 	socklen_t size_client_info;	
@@ -284,19 +299,19 @@ void fileTransfer(char *buffer, char type, int dataPort, char *fileName)
 	serverAddress.sin_addr.s_addr = INADDR_ANY; //we allow connection from any address
 
 	//set up socket
-	listen_socket = socket(AF_INET, SOCK_STREAM, 0); //create the socket
-	if(listen_socket < 0){
+	listenSocket = socket(AF_INET, SOCK_STREAM, 0); //create the socket
+	if(listenSocket < 0){
 		fprintf(stderr, "Error on data socket\n");
 		return;
 	}	
 
 	//start listening with current socket for any incoming controlConnections
-	bind(listen_socket, (struct sockaddr *)&serverAddress, sizeof(serverAddress)); //connect socket to port
-	listen(listen_socket, 10); //socket is now listening for a dataConnection
+	bind(listenSocket, (struct sockaddr *)&serverAddress, sizeof(serverAddress)); //connect socket to port
+	listen(listenSocket, 10); //socket is now listening for a dataConnection
 	
 	//accept the next connection
 	size_client_info = sizeof(clientAddress); //get the size of the address for the client that will connect
-	dataConnection = accept(listen_socket, (struct sockaddr *)&clientAddress, &size_client_info); //accept
+	dataConnection = accept(listenSocket, (struct sockaddr *)&clientAddress, &size_client_info); //accept
 	if(dataConnection < 0){
 		fprintf(stderr, "Error on data accept\n");
 		return;	
@@ -304,6 +319,7 @@ void fileTransfer(char *buffer, char type, int dataPort, char *fileName)
 	
 	//get data that needs to be sent
 	if(type == 'l'){
+
 		//get the contents of current directory and put it into the buffer
 		char *bufferPtr = buffer;
 		struct dirent *dir_entry;
@@ -311,7 +327,11 @@ void fileTransfer(char *buffer, char type, int dataPort, char *fileName)
 		while((dir_entry = readdir(dir)) != NULL) {
 			bufferPtr += sprintf(bufferPtr, "%s ", dir_entry->d_name);
 		}
+		//add a special end of file string
+		sprintf(buffer + strlen(buffer), "!$@$!");
+
 	} else if (type == 'g'){
+
 		//get the contents of file and put it into the buffer
 		memset(buffer, '\0', MAX_CHARS_MESSAGE);
 		
@@ -332,10 +352,14 @@ void fileTransfer(char *buffer, char type, int dataPort, char *fileName)
 
 		//close the file
 		fclose(fp);
+
 	} else {
+
 		//no valid file to send
+		close(listenSocket);	
 		close(dataConnection);
 		return;
+
 	}
 
 	//send file to client
@@ -347,5 +371,10 @@ void fileTransfer(char *buffer, char type, int dataPort, char *fileName)
 			exit(2); 
 		}
 	} while(charsWritten < strlen(buffer));
+	close(listenSocket);	
 	close(dataConnection);
+	
+	//free memory
+	free(fileName);		
+	free(buffer);		
 }

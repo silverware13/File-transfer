@@ -116,7 +116,6 @@ def receiveFile(dataSocket, controlSocket, serverName, serverPort, dataPort, fil
 	while "!$@$!" not in fileContents:
 		fileContents = dataSocket.recv(1000)
 	fileContents = fileContents[:-5]
-	print len(fileContents)
 	print fileContents
 
 	#close both connections	
