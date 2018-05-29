@@ -18,7 +18,7 @@ import os.path
 
 # validateInput
 # -------------
-# Validate that the input is valid from the command line.
+# Confirm that the command line arguments are valid.
 def validateInput(): 
 	#confirm command line arguments include port number
 	if (len(sys.argv) < 5 or len(sys.argv) > 6):
@@ -32,7 +32,11 @@ def validateInput():
 
 # initiateContact
 # -------
-# Sets up a control connection with a ftserver. 
+# Sets up a control connection with a ftserver.
+# 
+# controlSocket: The control socket.
+# serverName: The address of the server.
+# serverPort: The control port of the server. 
 def initiateContact(controlSocket, serverName, serverPort):
 	#attempt to connect to the server
 	try:
@@ -47,6 +51,12 @@ def initiateContact(controlSocket, serverName, serverPort):
 # The request will either be for listing
 # the contents of the directory (-l) 
 # or for a file (-g).
+#
+# dataPort: The data port.
+# command: The command requested.
+# fileName: The name of the file requested.
+# controlSocket: The control socket.
+# serverName: The address of the server.
 def makeRequest(dataPort, command, fileName, controlSocket, serverName):
 	#send a transfer request
 	request = str(dataPort) + command + serverName + "@" + fileName + "\n"
@@ -56,6 +66,13 @@ def makeRequest(dataPort, command, fileName, controlSocket, serverName):
 # ------------
 # Connect to data port of ftserver.
 # Once connected receive file from server on data port.
+#
+# dataSocket: The data socket.
+# controlSocket: The control socket.
+# serverName: The address of the server.
+# serverPort: The control port of the server.
+# dataPort: The data port of the server.
+# fileName: The name of the file requested.
 def receiveFile(dataSocket, controlSocket, serverName, serverPort, dataPort, fileName):
 	#attempt to connect to data port for transfer
 	time.sleep(2)

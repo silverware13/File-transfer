@@ -203,7 +203,6 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 	} while(serverName[bufLen - 1] != '@');
 	serverName[bufLen - 1] = '\0';
 	
-	printf("TEST_Z\n");	
 	//get requested file name if not list mode
 	ii = 0;
 	if(type == 'g'){
@@ -215,7 +214,6 @@ void handleRequest(int controlConnection, int controlPort, char *clientName)
 		} while(fileName[bufLen - 1] != '\n');
 		fileName[bufLen - 1] = '\0';
 	}
-	printf("TEST_X\n");	
 
 	//calculate how request should be handled
 	if(type == 'l'){
