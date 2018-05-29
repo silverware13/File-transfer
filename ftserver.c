@@ -137,6 +137,10 @@ void startup(int controlPort)
 
 		//react to clients command
 		handleRequest(controlConnection, controlPort, clientName);
+
+		//free memory
+		free(fileName);		
+		free(buffer);		
 	
 		//close the connection
 		close(controlConnection);
