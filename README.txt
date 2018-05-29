@@ -1,31 +1,47 @@
 Start by running two seperate terminals and connecting 
 them to flip.engr.oregonstate.edu (I used PuTTY on port 22).
 
-Terminal #1:
+For this assignment it is assumed that the server and client are 
+in two different folders, but are both on the same server (such as flip1). 
+If this is not the case you may have to change some of the commands to reflect 
+the correct server address.
+
+TERMINAL #1:
+---------------------------------------------------------
 Begin by compiling ftserver with the following command:
 gcc -o ftserver ftserver.c
 
-Terminal #2:
 We will start the server on port 12556 (or use any port you like):
-chmod +x ./chatserve
-./chatserve 12556
-Next we select our handle, we are going to use term2:
-term2
 
-Terminal #1:
-We will now start the client using local host and the same port:
-./chatclient localhost 12556
-Next we select our handle, we are going to use term1:
-term1
-At this point we should see a prompt with our handle, let us enter a message:
-Hello server
+./ftserve 12556
 
+---------------------------------------------------------
 Terminal #2:
-We should see the message we sent from term1 and a new prompt, let us respond:
-Hey client
+Next we want to send a request to see the contents of the servers directory: 
 
-Terminal #1:
-At this point we want to end the connection so we can type "\quit":
-\quit
+chmod +x ./ftclient
 
-At this point terminal #1 should have finished running chatclient and terminal #2 should have gone back to awaiting a new connection. We have now successfully used the chat client and server.
+ftclient localhost 12556 -l 27755
+
+At this point we should see the contents of the 
+servers directory on the clients terminal.
+
+For testing we are too assume there will be a large and a small text file being transfered.
+I will refrence them as "small.txt" and "large.txt" please adjust them to whatever file name you are using.
+
+We will start by geting the "small.txt" file from the server.
+
+ftclient localhost 55468 -g small.txt 55677
+
+Next we will get the "large.txt" file from the server.
+
+ftclient localhost 25262 -g large.txt 35373
+
+and last lets try getting a text file that does not exist.
+
+ftclient localhost 11235 -g no.txt 511344
+----------------------------------------------------------
+
+At this point testing is complete. We have seen the results of
+listing, getting a small file, getting a large file, and trying to get
+a file that does not exists.
