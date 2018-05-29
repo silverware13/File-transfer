@@ -84,7 +84,10 @@ def receiveFile(dataSocket, controlSocket, serverName, serverPort, dataPort, fil
 		sys.exit(1)
 	
 	#receive and print message from server 
-	fileContents = controlSocket.recv(1000)
+	fileContents = ""
+	while "!$@$!" not in fileContents:
+		fileContents += controlSocket.recv(1000)
+	fileContents = fileContents[:-5]
 	print fileContents
 
 	#if message says the file was not found we are done
@@ -109,7 +112,11 @@ def receiveFile(dataSocket, controlSocket, serverName, serverPort, dataPort, fil
 		sys.exit(0)
 
 	#receive list from server	
-	fileContents = dataSocket.recv(10000)
+	fileContents = ""
+	while "!$@$!" not in fileContents:
+		fileContents = dataSocket.recv(1000)
+	fileContents = fileContents[:-5]
+	print len(fileContents)
 	print fileContents
 
 	#close both connections	
