@@ -106,6 +106,20 @@ def receiveFile(dataSocket, controlSocket, serverName, serverPort, dataPort, fil
 		#close connections
 		dataSocket.close()
 		controlSocket.close()
+		#confirm that file does not already exist in directory
+		if (os.path.isfile(fileName)):
+			print fileName + " already exists. Do you want to overwrite the file?"
+			owFile = raw_input("[y/n]: ")
+			while owFile != "y" and owFile != "yes":
+				if owFile == "n" or owFile == "no":
+					print "No file transfered."
+					#close both connections	
+					dataSocket.close()
+					controlSocket.close()
+					sys.exit(1)
+				else:
+					print "Bad input. Please enter y or n."	
+					owFile = raw_input("[y/n]: ")
 		with open(fileName, "w") as text_file:
 			text_file.write(fileContents)
 		print "File transfer complete."
@@ -135,10 +149,6 @@ def main():
 	if (len(sys.argv) == 6):
 		fileName = sys.argv[4]
 		dataPort = int(sys.argv[5])
-		#confirm that file does not already exist in directory
-		if (os.path.isfile(fileName)):
-			print fileName + " already exists"
-			sys.exit(1)
 	else:
 		dataPort = int(sys.argv[4])
 		fileName = ''

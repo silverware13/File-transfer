@@ -6,8 +6,9 @@ in two different folders, but are both on the same server (such as flip1).
 If this is not the case you may have to change some of the commands to reflect 
 the correct server address.
 
-TERMINAL #1:
 ---------------------------------------------------------
+TERMINAL #1:
+
 Begin by compiling ftserver with the following command:
 gcc -o ftserver ftserver.c
 
@@ -17,6 +18,7 @@ We will start the server on port 12556 (or use any port you like):
 
 ---------------------------------------------------------
 Terminal #2:
+
 Next we want to send a request to see the contents of the servers directory: 
 
 chmod +x ./ftclient
