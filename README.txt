@@ -1,10 +1,7 @@
 Start by running two seperate terminals and connecting 
 them to flip.engr.oregonstate.edu (I used PuTTY on port 22).
 
-For this assignment it is assumed that the server and client are 
-in two different folders, but are both on the same server (such as flip1). 
-If this is not the case you may have to change some of the commands to reflect 
-the correct server address.
+I will be using flip1 and flip2 in this example but feel free to use any flip server you wish.
 
 ---------------------------------------------------------
 TERMINAL #1:
@@ -23,7 +20,7 @@ Next we want to send a request to see the contents of the servers directory:
 
 chmod +x ./ftclient
 
-ftclient localhost 12556 -l 27755
+ftclient flip1 12556 -l 27755
 
 At this point we should see the contents of the 
 servers directory on the clients terminal.
@@ -33,15 +30,15 @@ I will refrence them as "small.txt" and "large.txt" please adjust them to whatev
 
 We will start by geting the "small.txt" file from the server.
 
-ftclient localhost 12556 -g small.txt 55677
+ftclient flip1 12556 -g small.txt 55677
 
 Next we will get the "large.txt" file from the server.
 
-ftclient localhost 12556 -g large.txt 35373
+ftclient flip1 12556 -g large.txt 35373
 
 and last lets try getting a text file that does not exist.
 
-ftclient localhost 12556 -g no.txt 511344
+ftclient flip1 12556 -g no.txt 511344
 ----------------------------------------------------------
 
 At this point testing is complete. We have seen the results of

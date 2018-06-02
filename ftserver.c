@@ -155,6 +155,7 @@ void startup(int controlPort)
 	
 				//close the connection
 				close(controlConnection);
+				return;
 			}
 		} 	
 	}
