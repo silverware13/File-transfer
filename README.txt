@@ -36,11 +36,32 @@ Next we will get the "large.txt" file from the server.
 
 ftclient flip1 12556 -g large.txt 35373
 
-and last lets try getting a text file that does not exist.
+and lets try getting a text file that does not exist.
+We should receive an error message from the server.
 
 ftclient flip1 12556 -g no.txt 511344
+
+For our last test we will want to test receiving a file that
+already exists at the destination.
+
+First edit "small.txt" the file being sent from the server
+to include an extra line such as "extra line!".
+
+Now from the client request a the small.txt again.
+ftclient flip1 12556 -g small.txt 54477
+
+There should be a prompt asking if you want to overwrite the file
+type n and confirm that the small.txt file has not been overwriten.
+It should not have "extra line!" at the end.
+
+Now from the client request a the small.txt again.
+ftclient flip1 12556 -g small.txt 54487
+
+This time when prompted say yes. Confirm that the small.txt file HAS
+been overwriten. It should have "extra line!" at the end.
+
 ----------------------------------------------------------
 
 At this point testing is complete. We have seen the results of
-listing, getting a small file, getting a large file, and trying to get
-a file that does not exists.
+listing, getting a small file, getting a large file, trying to get
+a file that does not exists, and trying to get a file that already exists.

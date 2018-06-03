@@ -306,6 +306,10 @@ void fileTransfer(char *buffer, char type, int dataPort, char *fileName)
 		return;
 	}	
 
+	//allow reusing the socket
+	int set = 1;
+	setsockopt(listenSocket, SOL_SOCKET, SO_REUSEADDR, &set, sizeof(int));
+
 	//start listening with current socket for any incoming controlConnections
 	bind(listenSocket, (struct sockaddr *)&serverAddress, sizeof(serverAddress)); //connect socket to port
 	listen(listenSocket, 10); //socket is now listening for a dataConnection
