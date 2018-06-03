@@ -39,7 +39,7 @@ ftclient flip1 12556 -g large.txt 35373
 and lets try getting a text file that does not exist.
 We should receive an error message from the server.
 
-ftclient flip1 12556 -g no.txt 511344
+ftclient flip1 12556 -g no.txt 51134
 
 For our last test we will want to test receiving a file that
 already exists at the destination.
